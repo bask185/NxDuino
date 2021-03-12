@@ -1,0 +1,11 @@
+stappen plan.txt
+
+
+* stap 1 zet datastructuur en maak kopieer functies ed
+V stap 2 bepaal welke knoppen zijn ingedrukt 
+* stap 3 bepaal coordinaten van start X/Y en stop X/Y (IO linkt hier aan EEPROM geheugen)
+* stap 4 zet begin coordinaten goed op start X/Y
+* stap 5 kies richting (begin als een node??)
+* stap 6 ga zoeken naar een object die ligt op X1/Y1 van huidige object  (N.B. moet ik tegelijk ophalen in stap 3)
+* stap 7 kijk of dat object terugkijkt naar huidig object met X1/Y1 of X2/Y2 of X3/Y3 (node)
+* stap 8 leg vast aan welke kant ik gelinkt ben zodat ik weet dat ik aan de andere kant moet zoeken
