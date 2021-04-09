@@ -3,7 +3,7 @@ enum NxDuinoStates {
     getButtons,
     findAdjacentObject,
     storeNode,
-    clearLedArray,
+    loadNode,
     fail,
     succes,
     store LED array,

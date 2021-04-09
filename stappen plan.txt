@@ -1,11 +1,53 @@
 stappen plan.txt
 
 
-* stap 1 zet datastructuur en maak kopieer functies ed
-V stap 2 bepaal welke knoppen zijn ingedrukt 
-* stap 3 bepaal coordinaten van start X/Y en stop X/Y (IO linkt hier aan EEPROM geheugen)
-* stap 4 zet begin coordinaten goed op start X/Y
-* stap 5 kies richting (begin als een node??)
-* stap 6 ga zoeken naar een object die ligt op X1/Y1 van huidige object  (N.B. moet ik tegelijk ophalen in stap 3)
-* stap 7 kijk of dat object terugkijkt naar huidig object met X1/Y1 of X2/Y2 of X3/Y3 (node)
-* stap 8 leg vast aan welke kant ik gelinkt ben zodat ik weet dat ik aan de andere kant moet zoeken
+* laat programma SD kaart vullen met informatie over layout
+* laat arduino SD kaart uitlezen om IO te initialiseren
+* geheugen indelen RAM
+  - LEDs                leds voor route + leds voor bezetmelders.
+  - knop
+  - wissel              : xpressnet of I2C
+  - bezetmelder type 1  : xpressnet of I2C
+  - bezetmelder type 2  : xpressnet of I2C
+  - traincatcher
+
+* zet datastructuur en maak kopieer functies ed
+V bepaal welke knoppen zijn ingedrukt 
+* bepaal coordinaten van start X/Y en stop X/Y (IO linkt hier aan EEPROM geheugen)
+* zet begin coordinaten goed op start X/Y
+* kies richting (begin als een node??)
+* ga zoeken naar een object die ligt op X1/Y1 van huidige object  (N.B. moet ik tegelijk ophalen in stap 3)
+* kijk of dat object terugkijkt naar huidig object met X1/Y1 of X2/Y2 of X3/Y3 (node)
+* leg vast aan welke kant ik gelinkt ben zodat ik weet dat ik aan de andere kant moet zoeken
+
+types:
+Led voor route                          (I2C)
+Led voor bezetmelder type 1             (I2C)
+Led voor bezetmelder type 2             (I2C)
+knop voor start/stop                    (I2C)
+knop voor relais/ontkoppelaar           (I2C)
+wissel type 1                           (2 IO + puls I2C)
+wissel type 2                           (1 IO continu I2C)
+wissel type 3                           (Xpressnet/DCC)
+bezetmelder type 1a                     (I2C, passeerbaar)
+bezetmelder type 1b                     (Xpressnet, passeerbaar)
+bezetmelder type 2a                     (I2C, obstakel)
+bezetmelder type 2b                     (Xpressnet, obstakel)
+ontkoppelaar/relais type 1              (I2C)
+ontkoppelaar/relais type 2              (Xpressnet/DCC)
+
+
+Benodigde hardware?
+- 1 basis arduino met SD kaart 2-3 I2C aansluitingen en een Xpressnet aansluiting (of 2?)
+- Mcp23017 modules 
+   * schakelpaneel versie voor leds en knopjes (met of zonder kroonstenen?
+   * input versie voor terugmelding
+   * output versie met relais voor wissels en ontkoppelaars en licht circuits ed
+   * output versie met mosfets voor puls magneten
+   
+   hybride print met 8 terugmelders en 8 relais?? 
+   
+   of, combinatie met opzet printen.
+   basis mcp23017 print
+   
+- rj12 aansluiting voor I2C modules

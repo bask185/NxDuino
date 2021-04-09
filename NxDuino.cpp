@@ -43,7 +43,7 @@ typedef struct Objects {
 
 Object current, adjacent, start, stop ;
 
-
+#define SD
 
 // FUNCTIONS
 extern void NxDuinoInit(void)
@@ -196,12 +196,12 @@ stateFunction(getButtons) {
     }
 }
 
-stateFunction(findadjacentect) {
+stateFunction(findAdjacentObject) {
     uint8_t searchX, searchY ;
     
     entryState
     {
-        type = NA ;
+        type = nothing ;
         switch( connectedSide ) {                                       // record
         case 1: searchX = current.X1 ; searchY = current.Y1 ; break ;
         case 2: searchX = current.X2 ; searchY = current.Y2 ; break ;
@@ -214,37 +214,30 @@ stateFunction(findadjacentect) {
         {
             adjacent = loadNextObject();
             
-            if( connectedSide == 1 )
-            {
-                if( searchX == adjacent.X && searchY == adjacent.Y )       // if adjacent object is within our search coordinates.
-                {                                                          // than we need to check if the adjacent object is connected to us as well
-                    if( current.X == adjacent.X1 
-                    &&  current.Y == adjacent.Y1 )
-                    {
-                        connectedSide = 1;                              // important so we know on which side of this object we need to look.
-                        type = adjacent.type ;                          // can be: node, led, wall or other NOTE. IS type needed???? I do not think so
-                    }
-                    else
-                    if( current.X == adjacent.X2 
-                    &&  current.Y == adjacent.Y2 )
-                    {
-                        connectedSide = 2;
-                        type = adjacent.type ; 
-                    }
-                    else
-                    if( current.X == adjacent.X3                // POINT ONLY
-                    &&  current.Y == adjacent.Y3 )
-                    {
-                        connectedSide = 3;
-                        type = adjacent.type ;                       // can only be a point
-                    }
+            if( searchX == adjacent.X && searchY == adjacent.Y )       // if adjacent object is within our search coordinates.
+            {                                                          // than we need to check if the adjacent object is connected to us as well
+                if( current.X == adjacent.X1 
+                &&  current.Y == adjacent.Y1 )
+                {
+                    connectedSide = 1;                              // important so we know on which side of this object we need to look.
+                    type = adjacent.type ;                          // can be: node, led, wall or other NOTE. IS type needed????
                 }
+                else
+                if( current.X == adjacent.X2 
+                &&  current.Y == adjacent.Y2 )
+                {
+                    connectedSide = 2;
+                    type = adjacent.type ; 
+                }
+                else
+                if( current.X == adjacent.X3                // POINT ONLY
+                &&  current.Y == adjacent.Y3 )
+                {
+                    connectedSide = 3;
+                    type = adjacent.type ;                       // can only be a point
+                }
+            break ;         
             }
-        }
-        
-        if( type == NA )                                // no matching item found
-        {
-            type = wall ;                               // so we hit a wall
         }
         
         debug(F("Found type :")) ;
@@ -272,7 +265,7 @@ stateFunction(findadjacentect) {
 stateFunction(storeNode) {
     entryState
     {
-        push( node, current.ID ) ;                              // push ID on the node stack
+        push( current.X, current.Y ) ;                           // push node coordinates on the node stack
     }
     onState
     {
@@ -284,15 +277,17 @@ stateFunction(storeNode) {
     }
 }
 
-stateFunction(clearLedArray) {
+stateFunction(loadNode) {
+    uint8_t X, Y ;
+    
     entryState
     {
-        
+        pop( &X, &Y ) ;                                         // pop node coordinates from the node stack
+        loadNode( &current, X, Y);
+        whipeLedArray() ;                                       // no route found at this point so whipe the LED array
     }
     onState
     {
-        whipeLedArray() ;
-        
         exitFlag = true;
     }
     exitState
@@ -309,7 +304,7 @@ stateFunction(fail) {
     }
     onState
     {
-        if( blinkErrorLed() )
+        if( blink( errorLed ) )
         {
             exitFlag = true;
         }
@@ -327,7 +322,7 @@ stateFunction(succes) {
     }
     onState
     {
-        if( blinkSuccesLed() )
+        if( blink( succesLed ) )
         {
             exitFlag = true;
         }
@@ -366,22 +361,22 @@ extern bool NxDuino(void) {
         nextState(getButtons, 0); }
 
     State(getButtons) {
-        nextState(findadjacentect, 0); }
+        nextState(findAdjacentObject, 0); }
 
-    State(findadjacentect) {
+    State(findAdjacentObject) {
         if( type == node )      nextState(storeNode, 0);
-        if( type == other )     nextState(findadjacentect, 0);
+        if( type == other )     nextState(findAdjacentObject, 0);
         if( type == nothing ) {
-            if( nodesLeft )     nextState(clearLedArray, 0);
+            if( nodesLeft )     nextState(loadNode, 0);
             else                nextState(fail, 0); }
         if( type == endButton)  nextState(succes, 0);
         if( type == led )       nextState(storeLed, 0); }
 
     State(storeNode) {
-        nextState(findAdjecntObject, 0); }
+        nextState(findAdjacentObject, 0); }
 
-    State(clearLedArray) {
-        nextState(findadjacentect, 0); }
+    State(loadNode) {
+        nextState(findAdjacentObject, 0); }
 
     State(fail) {
         nextState(getButtons, 0); }
@@ -390,7 +385,7 @@ extern bool NxDuino(void) {
         nextState(getButtons, 0); }
 
     State(storeLed) {
-        nextState(findAdjecntObject, 0); }
+        nextState(findAdjacentObject, 0); }
 
     STATE_MACHINE_END
 }
