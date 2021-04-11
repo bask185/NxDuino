@@ -1,4 +1,8 @@
 #include <Arduino.h>
+#include "src/modules/mcp23017.h"
+
+extern Mcp23017 mcp[] ;
+extern uint8_t nMcp ;
 
 const int nTrackSegment = 256 ; // 3 bytes each
 const int nRailItem = 128 ;			
@@ -23,10 +27,13 @@ enum types {
 types  type ;
 
 
-typedef struct  {
+typedef struct someName {
     uint8_t ID ;
     uint8_t type ;
-    uint8_t pin ;
+    uint8_t state ;
+    uint8_t statePrev ;
+    uint8_t inputPin ;      // some devices have both an input as well as an output such as a occupancy detector
+    uint8_t outputPin ;
     uint8_t x  ;
     uint8_t y  ; 
 	uint8_t dir ;
@@ -37,7 +44,7 @@ typedef struct  {
     // uint8_t x3 ; // points have 3 connections <-- node only
     // uint8_t y3 ;
 } railItems ;
-extern railItems IO[] ;
+extern railItems IO[nRailItem] ;
 
 // N.B. rail sections will propably be great in amount, therefor reduced RAM storage is preferable.
 typedef struct  {
@@ -54,5 +61,5 @@ typedef struct  {
     //uint8_t x3 ; // points have 3 connections <-- node only
     //uint8_t y3 ;
 } trackSegments ;
-extern trackSegments track nTrackSegment ] ;
+extern trackSegments track[] ;
 

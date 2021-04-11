@@ -1,14 +1,15 @@
 #include "NxDuino.h"
+#include "roundRobinTasks.h"
 
 void setup()
 {
 	roundRobinTasksInit() ;
-	NxDuinoInit() ;
+	//NxDuinoInit() ;
 }
 
 void loop()
 {
 	roundRobinTasks() ;
-	NxDuino() ;
+	//NxDuino() ;
 
 }

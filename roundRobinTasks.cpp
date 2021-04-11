@@ -1,38 +1,111 @@
 #include "roundRobinTasks.h"
 #include "variables.h"
+#include <SD.h>
+#include <SPI.h>
+#include "src/modules/XpressNet.h"
 
-uint8_t taskCounter = 0 ;
+#define REPEAT_MS(x)    { \
+                            static uint32_t previousTime ; \
+                            uint32_t currentTime = millis() ; \
+                            if( currentTime - previousTime >= x ) \
+                            {   \
+                                previousTime = currentTime ;
+                         
+#define END_REPEAT          } \
+                        }
+#define LOWBYTE(x)   ((unsigned char) (x))
+#define HIGHBYTE(x)  ((unsigned char) (((unsigned int) (x)) >> 8))
 
-void roundRobinTasksInit()
+XpressNetClass XpressNet;   // xpressnet object
+File layout ;               // sd card file object
+
+const int CSpin = 10 ;
+
+#define DEBUG
+void debug( char * someTxt )
 {
-    // TODO 
-    // load railmap + IO
-    // init mcp devices    
+    #ifdef DEBUG
+    Serial.print( someTxt ) ;
+    #endif 
 }
 
-void readI2cInputs()
+void debug( int num )
+{
+    #ifdef DEBUG
+    Serial.print( num ) ;
+    #endif 
+}
+
+
+void loadRailMap()
+{
+    debug(F("\r\nloading rail map from SD card\r\n")) ;
+
+    if( SD.begin( CSpin) )  debug(F("\r\nSD card initialized\r\n")) ;
+    else                    debug(F("\r\nWarning could not initialize SD card\r\n")) ;
+
+    layout = SD.open("layout.txt") ;
+    if( layout ) debug(F("\r\nlayout.txt opened\r\n")) ;
+    else         debug(F("\r\nwarning, could not open layout.txt\r\n")) ;
+
+    while( layout.available() ) {
+        byte someSize = 1; 
+        byte buffer[someSize] ;
+        layout.readBytes( buffer, someSize ) ;
+    }
+     debug(F("\r\nrail map loaded\r\n")) ;
+}
+
+void initMcp() 
+{
+    uint8_t ioDir[nMcp] ; // needs filling in
+    debug(F("\r\nintialising I2C bus\r\n")) ;
+    for(byte j = 0 ; j < nMcp ; j++ ) {						// check if all 4 slaves are present and set their IO dir registers
+		if( mcp[j].init(mcpBaseAddress + j , ioDir[j]) ) {  // if function returns true, the slave did NOT respond
+			nMcp = j ;
+			break ; 
+		}
+	}
+    debug( nMcp );
+    debug(F(" mcp23017 devices found\r\n" )) ;
+}
+const int XNetAddress = 30 ;
+const int XNetSRPin = 2 ;
+void initXpressnet() 
+{
+    XpressNet.start( XNetAddress, XNetSRPin);
+}
+
+
+void readInputs()
 {
     uint8_t state;
     static uint16_t inputPrev[8] = {0,0,0,0,0,0,0,0} ;
 
-    for( byte slave = 0 ; slave < nMcp ; slave+ + )                                         // for all MCP23017 devices
+    for( uint8_t slave = 0 ; slave < nMcp ; slave ++ )                                         // for all MCP23017 devices
     {
         uint16_t input = mcp[slave].getInput(portB) | (mcp[slave].getInput(portA) << 8);    // read both I/O ports
 
-        for( uint8_t in = 0 ; pin < 16 ; pin ++ )                                           // for all 16 I/O pins
+        for( uint8_t pin = 0 ; pin < 16 ; pin ++ )                                           // for all 16 I/O pins
         {   
             uint8_t newInp =             input & ( 1 << pin ) ;                             // get state of pin
             uint8_t oldInp =  inputPrev[slave] & ( 1 << pin ) ;                             // get previous state of same pin
             if( newInp != oldInp )                                                          // and check if they differ
             {    
+                uint8_t state ;
                 inputPrev[slave] = input ;
                
-                IO = pin + slave * 16 ;                                                     // calculate which IO has changed
+                uint8_t _IO = pin + slave * 16 ;                                                     // calculate which IO has changed
                 if( input  & ( 1 << pin ) ) state = 0 ;                                     // store the state of the changed I/O (not pressed = HIGH)
                 else                        state = 1 ;
 
                 for( uint8_t i = 0 ; i < nRailItem ; i ++ )                                 // for loop to search which object is linked to this IO pin
                 {
+                    debug("\r\ninput ");
+                    debug( _IO ) ; 
+                    debug(F(" changed to "));
+                    debug( state ) ;
+
                     uint8_t type = IO[i].type ;
                     switch( type )
                     {
@@ -50,51 +123,47 @@ void readI2cInputs()
 
 void updateOutputs()
 {
-    for( byte i = 0 ; i < nElements ; i ++ )
+    for( byte i = 0 ; i < nRailItem ; i ++ )
     {
-        if( railItem[i].state != railItem[i].statePrev )                                                // if state has changed
-        {
-            railItem[i].statePrev = railItem[i].state ;                                                    // safe change
+        uint8_t state = IO[i].state ;
 
-            uint8_t type = railItem[i].type ;
-            if( type >= route_led &&  type <= uncoupler_I2C )                                       // checks if railItem is an I2C output
+        if( state!= IO[i].statePrev )                                                // if state has changed
+        {
+            IO[i].statePrev = state;                                                    // safe change
+ 
+            uint8_t type  = IO[i].type ;
+            if( type >= route_led &&  type <= uncoupler_I2C )                                       // checks if IO is an I2C output
             {
-                uint8_t I2cPin =   railItem[i].pin ; 
-                uint8_t I2cState = railItem[i].state ; 
-                mcpWrite( I2cPin, I2cState ) ;
+                uint8_t I2cPin =   IO[i].outputPin ; 
+               // mcpWrite( I2cPin, state ) ; to be made
             }
             else if ( type == point_DCC || type == uncoupler_DCC )
             {
-                // Xnet.transmitt( ID, state, ) 
+                uint8_t ID = IO[i].ID ;
+                XpressNet.setTrntPos( HIGHBYTE(ID), LOWBYTE(ID), state) ;
             }
         }
     }
 }
 
-void readXnet()
+
+void roundRobinTasksInit()
 {
-
+    loadRailMap() ;
+    initMcp() ;
+    initXpressnet() ;
 }
-
 
 void roundRobinTasks()
 {
-    switch( ++ taskCounter )
-    {
-    default: taskCounter = 0 ;
+    XpressNet.receive();
 
-    case 0:
-        readI2cInputs() ;
-        break ;
+    REPEAT_MS(20);
 
-    case 1:
-        updateOutputs() ;
-        break ;
+    readInputs() ;
+    updateOutputs() ;
 
-    case 2:
-        readXnet() ;
-        break ;
-    }
+    END_REPEAT
 }
 
 
