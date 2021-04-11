@@ -1,9 +1,9 @@
 // HEADER FILES
 #include <Arduino.h>
 #include "NxDuino.h"
-#include "serial.h"
-#include "src/basics/timers.h"
-#include "src/basics/io.h"
+//#include "serial.h"
+//#include "src/basics/timers.h"
+//#include "src/basics/io.h"
 
 // MACROS
 #define stateFunction(x) static bool x##F(void)
@@ -27,21 +27,10 @@ else switch(state){\
 static unsigned char state = beginState;
 static bool enabled = true, runOnce = true, exitFlag = false;
 
+
 uint8_t *startX, *startY, *stopX, *stopY, *startPin, *stopPin ;
 
-typedef struct Objects {
-    uint8_t ID ;
-    uint8_t type ;
-    uint8_t pin ;
-    uint8_t x1 ; // 'normal' objects have 2 connections
-    uint8_t y1 ; 
-    uint8_t x2 ;
-    uint8_t y2 ;
-    uint8_t x3 ; // points have 3 connections <-- node only
-    uint8_t y3 ;
-} Object ;
 
-Object current, adjacent, start, stop ;
 
 #define SD
 
@@ -50,6 +39,8 @@ extern void NxDuinoInit(void)
 {
     state = beginState ;
 }
+
+
 
 // This functions reads in all listed buttons and returns true when both a start button
 uint8_t readButtonStates(uint8_t *_first, uint8 *_second)

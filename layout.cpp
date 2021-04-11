@@ -1,30 +1,30 @@
-#include <SD.h>
+// #include <SD.h>
 
-layout = SD.open("layout.txt") ;
+// layout = SD.open("layout.txt") ;
 
-while( layout.available() ) {
+// while( layout.available() ) {
     
-    byte buffer[someSize] ;
-    layout.readBytes( buffer someSize ) ;
-    
-    
+//     byte buffer[someSize] ;
+//     layout.readBytes( buffer someSize ) ;
     
     
     
-typedef struct {
-    uint8_t type ;
-    uint8_t dir ;
-    uint8_t x1 ;
-    uint8_t y1 ; // point has 3 connections
-    uint8_t x2 ;
-    uint8_t y2 ;
-    uint8_t x3 ;
-    uint8_t y3 ;
-} Object ;
+    
+    
+// typedef struct {
+//     uint8_t type ;
+//     uint8_t dir ;
+//     uint8_t x1 ;
+//     uint8_t y1 ; // point has 3 connections
+//     uint8_t x2 ;
+//     uint8_t y2 ;
+//     uint8_t x3 ;
+//     uint8_t y3 ;
+// } Object ;
 
 
     
-getAdjacentObject( &x1, &y1, &x2, &y2 )
+// getAdjacentObject( &x1, &y1, &x2, &y2 )
 
 
 /*

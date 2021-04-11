@@ -51,3 +51,10 @@ Benodigde hardware?
    basis mcp23017 print
    
 - rj12 aansluiting voor I2C modules
+
+Acties: wat moet NxDuino wanneer doen?
+//   EVENT                                              >>                       ACTIE
+- I2C bus uitlezen voor start/stop knopjes.             >>    state machine runnen en wissels en leds schakelen enzo
+- I2C bus uitlezen voor bezetmelders                    >>    status bezetmelder updaten en/of ledje aansturen
+- Xnet in de gaten voor bezetmeld stati                 >>    status bezetmelder updaten en/of ledje aansturen
+- I2C bus uitlezen voor overige knopjes (relais ed)     >>    I2C of Xnet/DCC apparaat aansturen.

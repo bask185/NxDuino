@@ -6,7 +6,7 @@ enum NxDuinoStates {
     loadNode,
     fail,
     succes,
-    store LED array,
+    storeLed,
     initNXduino };
 
 extern bool NxDuino(void); 
