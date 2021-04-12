@@ -58,3 +58,32 @@ Acties: wat moet NxDuino wanneer doen?
 - I2C bus uitlezen voor bezetmelders                    >>    status bezetmelder updaten en/of ledje aansturen
 - Xnet in de gaten voor bezetmeld stati                 >>    status bezetmelder updaten en/of ledje aansturen
 - I2C bus uitlezen voor overige knopjes (relais ed)     >>    I2C of Xnet/DCC apparaat aansturen.
+
+
+Hoe moet het gaan werken:
+
+Om alle IO te laden in RAM, kost te veel geheugen. 
+Om alles op te slaan in de EEPOM kost te vel geheugen.
+Er is een externe I2C EEPROM nodig met meer geheugen.
+
+IO componenten komen te liggen in de eerst 512 locaties van de EEPROM. Er 128 IO mogelijk op de I2C bus en daarbij kunnen nog 256 DCC artikelen
+worden toegevoegd. Zodoende worden er 128 van de eerste 512 locaties in de EEPROM niet benut. 
+
+Alle sporen elemenenten komen daar onder te liggen. De geheugenlocaties worden bepaald adhv de X en Y coordinaten. Dit betekent dat een IO object in het
+baanplan in tweevoud zal bestaan in de EEPROM. 1x als IO object en nog een keer als een track segment. Er kunnen niet zomaar 256x X en Y mogelijkheden
+komen omdat je dan 256x256*8 bytes nodig zou hebben en zo groot is de EEPROM ook weer niet. Daarom wordt het baanplan beperkt tot 64 X coordinaten en 
+32 Y coordinaten. Op het moment liggen voor alle objecten ook nog eens x en y coordinaten vast van dat waar ze naar wijzen. 
+
+In principe volstaat het ook om het type en direction van een railsegment vast te leggen ipv van naburige coordinaten zodat de arduino kan berekenen 
+wat er naast ligt. Dit scheelt namelijk 5/8 bytes voor opslag. Maar dit is iets ingewikkelder en strikt gezien niet noodzakelijk. 
+Misschien leuk voor versie 2.
+
+Er is ook een locatie nodig om bij te houden of
+het EEPROM ten minste 1x geiniialiseerd is. Bij opstarten, moet het programma kijken of er een SD kaart aanwezig met het correcte bestand. En zo ja
+moet de SD kaart in 1 klap geparsed worden en naar de EEPROM worden weggeschreven. Daarna kan de NxDuino in principe zonder SD kaart verder.
+
+railsegmenten hebben dus elk 8 bytes en er kunnen tot max 64 x 32 elementen bestaan en IO objecten bestaan elk uit 6 bytes. Dus ik gebruik er 8 voor
+het gemak en het kan zo zijn dat er op een dag toch een byte of twee bij moten
+
+dus 128 * 8 bytes voor IO = 1024 bytes gereserveerd voor IO
+0x0000 tot 0x03FF

@@ -1,27 +1,16 @@
+#include "XpressNet.h"
 #include "roundRobinTasks.h"
 #include "variables.h"
 #include <SD.h>
 #include <SPI.h>
-#include "src/modules/XpressNet.h"
 
-#define REPEAT_MS(x)    { \
-                            static uint32_t previousTime ; \
-                            uint32_t currentTime = millis() ; \
-                            if( currentTime - previousTime >= x ) \
-                            {   \
-                                previousTime = currentTime ;
-                         
-#define END_REPEAT          } \
-                        }
-#define LOWBYTE(x)   ((unsigned char) (x))
-#define HIGHBYTE(x)  ((unsigned char) (((unsigned int) (x)) >> 8))
 
 XpressNetClass XpressNet;   // xpressnet object
-File layout ;               // sd card file object
+//File layout ;               // sd card file object
 
 const int CSpin = 10 ;
 
-#define DEBUG
+//#define DEBUG
 void debug( char * someTxt )
 {
     #ifdef DEBUG
@@ -39,36 +28,37 @@ void debug( int num )
 
 void loadRailMap()
 {
-    debug(F("\r\nloading rail map from SD card\r\n")) ;
+    //debug(F("\r\nloading rail map from SD card\r\n")) ;
 
-    if( SD.begin( CSpin) )  debug(F("\r\nSD card initialized\r\n")) ;
-    else                    debug(F("\r\nWarning could not initialize SD card\r\n")) ;
+    //if( SD.begin( CSpin) ) ; //debug(F("\r\nSD card initialized\r\n")) ;
+//    else                    debug(F("\r\nWarning could not initialize SD card\r\n")) ;
 
-    layout = SD.open("layout.txt") ;
-    if( layout ) debug(F("\r\nlayout.txt opened\r\n")) ;
-    else         debug(F("\r\nwarning, could not open layout.txt\r\n")) ;
+   // layout = SD.open("layout.txt") ;
+   // if( layout ); //debug(F("\r\nlayout.txt opened\r\n")) ;
+   // else        /debug(F("\r\nwarning, could not open layout.txt\r\n")) ;
 
-    while( layout.available() ) {
-        byte someSize = 1; 
-        byte buffer[someSize] ;
-        layout.readBytes( buffer, someSize ) ;
-    }
-     debug(F("\r\nrail map loaded\r\n")) ;
+   // while( layout.available() ) {
+     //   byte someSize = 1; 
+     //   byte buffer[someSize] ;
+      //  layout.readBytes( buffer, someSize ) ;
+  //  }
+    // debug(F("\r\nrail map loaded\r\n")) ;
 }
 
 void initMcp() 
 {
     uint8_t ioDir[nMcp] ; // needs filling in
-    debug(F("\r\nintialising I2C bus\r\n")) ;
+    //debug(F("\r\nintialising I2C bus\r\n")) ;
     for(byte j = 0 ; j < nMcp ; j++ ) {						// check if all 4 slaves are present and set their IO dir registers
 		if( mcp[j].init(mcpBaseAddress + j , ioDir[j]) ) {  // if function returns true, the slave did NOT respond
 			nMcp = j ;
 			break ; 
 		}
 	}
-    debug( nMcp );
-    debug(F(" mcp23017 devices found\r\n" )) ;
+   // debug( nMcp );
+   // debug(F(" mcp23017 devices found\r\n" )) ;
 }
+
 const int XNetAddress = 30 ;
 const int XNetSRPin = 2 ;
 void initXpressnet() 
@@ -106,8 +96,8 @@ void readInputs()
                     debug(F(" changed to "));
                     debug( state ) ;
 
-                    uint8_t type = IO[i].type ;
-                    switch( type )
+                    uint8_t _type = IO[i].type ;
+                    switch( _type )
                     {
                     case occupancy_1_I2C :                                                  // if any of these items -> update the state
                     case occupancy_2_I2C :
@@ -131,16 +121,16 @@ void updateOutputs()
         {
             IO[i].statePrev = state;                                                    // safe change
  
-            uint8_t type  = IO[i].type ;
-            if( type >= route_led &&  type <= uncoupler_I2C )                                       // checks if IO is an I2C output
+            uint8_t _type  = IO[i].type ;
+            if( _type >= route_led &&  _type <= uncoupler_I2C )                                       // checks if IO is an I2C output
             {
                 uint8_t I2cPin =   IO[i].outputPin ; 
                // mcpWrite( I2cPin, state ) ; to be made
             }
-            else if ( type == point_DCC || type == uncoupler_DCC )
+            else if ( _type == point_DCC || _type == uncoupler_DCC )
             {
-                uint8_t ID = IO[i].ID ;
-                XpressNet.setTrntPos( HIGHBYTE(ID), LOWBYTE(ID), state) ;
+                uint8_t _ID = IO[i].ID ;
+                XpressNet.setTrntPos( HIGHBYTE(_ID), LOWBYTE(_ID), state) ;
             }
         }
     }

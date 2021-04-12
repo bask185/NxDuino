@@ -1,8 +1,21 @@
 #include <Arduino.h>
 #include "src/modules/mcp23017.h"
 
+#define REPEAT_MS(x)    { \
+                            static uint32_t previousTime ; \
+                            uint32_t currentTime = millis() ; \
+                            if( currentTime - previousTime >= x ) \
+                            {   \
+                                previousTime = currentTime ;
+                         
+#define END_REPEAT          } \
+                        }
+#define LOWBYTE(x)   ((unsigned char) (x))
+#define HIGHBYTE(x)  ((unsigned char) (((unsigned int) (x)) >> 8))
+
 extern Mcp23017 mcp[] ;
 extern uint8_t nMcp ;
+
 
 const int nTrackSegment = 256 ; // 3 bytes each
 const int nRailItem = 128 ;			
@@ -24,7 +37,7 @@ enum types {
     occupancy_1_Xnet        ,	// Xnet
     occupancy_2_Xnet        ,	// Xnet
 } ;
-types  type ;
+//types  type ;
 
 
 typedef struct someName {
@@ -32,34 +45,22 @@ typedef struct someName {
     uint8_t type ;
     uint8_t state ;
     uint8_t statePrev ;
-    uint8_t inputPin ;      // some devices have both an input as well as an output such as a occupancy detector
-    uint8_t outputPin ;
-    uint8_t x  ;
-    uint8_t y  ; 
-	uint8_t dir ;
-    // uint8_t x1 ; // 'normal' objects have 2 connections
-    // uint8_t y1 ; 
-    // uint8_t x2 ;
-    // uint8_t y2 ;
-    // uint8_t x3 ; // points have 3 connections <-- node only
-    // uint8_t y3 ;
+    uint8_t pin ;           // some devices have both an input as well as an output such as a occupancy detector
+    uint8_t linkedPin ;
 } railItems ;
-extern railItems IO[nRailItem] ;
+extern railItems IO ;
 
 // N.B. rail sections will propably be great in amount, therefor reduced RAM storage is preferable.
-typedef struct  {
-    //uint8_t ID ;
-    //uint8_t type ;
-    //uint8_t pin ;
-    uint8_t X ;
-    uint8_t Y  ; 
-	uint8_t dir ;
-    //uint8_t x1 ; // 'normal' objects have 2 connections
-    //uint8_t y1 ; 
-    //uint8_t x2 ;
-    //uint8_t y2 ;
-    //uint8_t x3 ; // points have 3 connections <-- node only
-    //uint8_t y3 ;
+typedef struct  
+{
+    uint8_t x0 ;
+    uint8_t y0  ; 
+    uint8_t x1 ; // 'normal' objects have 2 connections
+    uint8_t y1 ; 
+    uint8_t x2 ;
+    uint8_t y2 ;
+    uint8_t x3 ; // points have 3 connections <-- node only
+    uint8_t y3 ;
 } trackSegments ;
-extern trackSegments track[] ;
+extern trackSegments trackSegment ;
 

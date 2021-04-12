@@ -14,7 +14,7 @@
 #define STATE_MACHINE_BEGIN if(!enabled) { \
     if(!NxDuinoT) enabled = true; } \
 else switch(state){\
-    default: Serial.println("unknown state executed, state is idle now"); state = NxDuinoIDLE; case NxDuinoIDLE: return true;
+    default: /*Serial.println("unknown state executed, state is idle now");*/ state = NxDuinoIDLE; case NxDuinoIDLE: return true;
 #define STATE_MACHINE_END break;}return false;
 
 
