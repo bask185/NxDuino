@@ -18,24 +18,25 @@ extern uint8_t nMcp ;
 
 
 const int nTrackSegment = 256 ; // 3 bytes each
-const int nRailItem = 128 ;			
+const int nRailItem = 128 ;            
 
 // all input and output types.
 enum types {
     start_stop_sw           ,   // I2C input
-    uncoupler_sw            ,   // I2C input
+    relay_sw                ,   // I2C input
     occupancy_1_I2C         ,   // I2C input
     occupancy_2_I2C         ,   // I2C input
     route_led               ,   // I2C output
     occupance_led_1         ,   // I2C output
     occupance_led_2         ,   // I2C output
-    point_pulse           	,   // I2C output
-    point_relay           	,   // I2C output
-    uncoupler_I2C           ,   // I2C output
-    point_DCC             	,	// Xnet/DCC
-    uncoupler_DCC          	,	// Xnet/DCC
-    occupancy_1_Xnet        ,	// Xnet
-    occupancy_2_Xnet        ,	// Xnet
+    point_pulse             ,   // I2C output
+    point_relay             ,   // I2C output
+    relay_I2C               ,   // I2C output
+    relay_DCC               ,   // Xnet/DCC output
+    point_DCC               ,   // Xnet/DCC output
+    occupancy_1_Xnet        ,   // Xnet input message
+    occupancy_2_Xnet        ,   // Xnet input message
+    NA = 255                    // not available = 255 
 } ;
 //types  type ;
 

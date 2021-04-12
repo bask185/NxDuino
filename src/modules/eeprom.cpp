@@ -10,7 +10,7 @@
 #define segmentOffset 0x3FFF
 void storeSegement( trackSegments segment ) 
 {
-	uint8_t nElements = sizeof( _IO ) ;
+	uint8_t nElements = sizeof( segment ) ;
 	uint8_t *ptr;
 	ptr = & segment.x0 ;							// pointer to first elemelent
 	//			address = x * y + offset
@@ -33,7 +33,7 @@ trackSegments getSegment( uint8_t X, uint8_t Y )
     trackSegments segment ;
     uint8_t *ptr ;                                        // declare pointer
     ptr = &segment.x0 ;
-    nElements = sizeof( segment ) ;
+    uint8_t nElements = sizeof( segment ) ;
 
     X = constrain( X, 1, 64 ) ;                    // safety measure
     Y = constrain( Y, 1, 32 ) ;                    // safety measure
@@ -54,7 +54,7 @@ trackSegments getSegment( uint8_t X, uint8_t Y )
         ptr++ ;
     } 
 
-    return _IO ;
+    return segment ;
 }
 
 

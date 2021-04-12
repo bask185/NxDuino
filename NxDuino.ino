@@ -4,6 +4,9 @@
 void setup()
 {
 	roundRobinTasksInit() ;
+	loadSDcard() ;			// checks if SD card is present and if it contains layout.csv. If so, filles EEPROM
+	loadEEPROM() ;			// runs through EEPROM to initialize MCP23017 devices
+
 	//NxDuinoInit() ;
 	//Serial.begin(115200) ;
 }
