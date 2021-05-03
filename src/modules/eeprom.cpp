@@ -67,8 +67,8 @@ void storeIO( railItems _IO )
 	uint8_t nElements = sizeof( _IO ) ;
 	uint8_t *ptr;
 	ptr = & _IO.ID ;										// pointer to first elemelent
-	//					 pin * 8 
-	uint16_t eeAddress = _IO.pin * 8 ;    
+	//					 inputPin* 8 
+	uint16_t eeAddress = _IO.inputPin* 8 ;    
 
 	Wire.beginTransmission( hwAddress ) ;
 	Wire.write( HIGHBYTE( eeAddress ) ) ;                
@@ -82,16 +82,16 @@ void storeIO( railItems _IO )
 	Wire.endTransmission() ;
 }
 
-railItems getIO( uint8_t pin )
+railItems getIO( uint8_t inputPin)
 {
     railItems _IO ;                                        // declare local object called IO
     uint8_t *ptr ;                                        // declare pointer
     ptr = &_IO.ID ;                                      // let it point to first element of object
 
-    pin = constrain( pin, 1, 128 ) ;                    // safety measure
-    pin -- ;                                            // for 0 index misery
+    inputPin= constrain( pin, 1, 128 ) ;                    // safety measure
+    inputPin-- ;                                            // for 0 index misery
 
-    uint16_t eeAddress = pin * 8 ;                        // should be always within 0-127
+    uint16_t eeAddress = inputPin* 8 ;                        // should be always within 0-127
 
     Wire.beginTransmission( hwAddress ) ;
     Wire.write( HIGHBYTE( eeAddress ) ) ;

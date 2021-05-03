@@ -46,8 +46,8 @@ typedef struct someName {
     uint8_t type ;
     uint8_t state ;
     uint8_t statePrev ;
-    uint8_t pin ;           // some devices have both an input as well as an output such as a occupancy detector
-    uint8_t linkedPin ;
+    uint8_t inputPin;           // some devices have both an input as well as an output such as a occupancy detector
+    uint8_t outputPin ;
 } railItems ;
 extern railItems IO ;
 
@@ -56,12 +56,12 @@ typedef struct
 {
     uint8_t x0 ;
     uint8_t y0  ; 
-    uint8_t x1 ; // 'normal' objects have 2 connections
-    uint8_t y1 ; 
-    uint8_t x2 ;
-    uint8_t y2 ;
-    uint8_t x3 ; // points have 3 connections <-- node only
-    uint8_t y3 ;
+    uint8_t type ; // line (line, detector, button, whatever is straight), left point, right point, curve
+    uint8_t dir ; 
+    uint8_t x2 ;    // not in use
+    uint8_t y2 ;    // not in use
+    uint8_t x3 ;    // not in use
+    uint8_t y3 ;    // not in use
 } trackSegments ;
 extern trackSegments trackSegment ;
 
