@@ -1,82 +1,98 @@
-// HEADER FILES
-#include <Arduino.h>
-#include "NxDuino.h"
-//#include "serial.h"
-//#include "src/basics/timers.h"
-//#include "src/basics/io.h"
+// // HEADER FILES
+// #include <Arduino.h>
+// #include "pathfinder.h"
+// #include "config.h"
+// //#include "serial.h"
+// //#include "src/basics/timers.h"
+// //#include "src/basics/io.h"
 
-// MACROS
-#define stateFunction(x) static bool x##F(void)
-#define entryState if(runOnce) 
-#define onState runOnce = false; if(!runOnce)
-#define exitState if(!exitFlag) return false; else
-#define State(x) break; case x: if(runOnce) Serial.println(#x); if(x##F())
-#define STATE_MACHINE_BEGIN if(!enabled) { \
-    if(!NxDuinoT) enabled = true; } \
-else switch(state){\
-    default: /*Serial.println("unknown state executed, state is idle now");*/ state = NxDuinoIDLE; case NxDuinoIDLE: return true;
-#define STATE_MACHINE_END break;}return false;
-
-
-#define beginState initNXduino
-#ifndef beginState
-#error beginState not yet defined
-#endif
-
-// VARIABLES
-static unsigned char state = beginState;
-static bool enabled = true, runOnce = true, exitFlag = false;
+// // MACROS
+// #define stateFunction(x) static bool x##F(void)
+// #define entryState if(runOnce) 
+// #define onState runOnce = false; if(!runOnce)
+// #define exitState if(!exitFlag) return false; else
+// #define State(x) break; case x: if(x##F())
+// #define STATE_MACHINE_BEGIN if(!enabled) { \
+//     if(!NxDuinoT) enabled = true; } \
+// else switch(state){\
+//     default: /*Serial.println("unknown state executed, state is idle now");*/ state = NxDuinoIDLE; case NxDuinoIDLE: return true;
+// #define STATE_MACHINE_END break;}return false;
 
 
-uint8_t *startX, *startY, *stopX, *stopY, *startPin, *stopPin ;
+// #define beginState initNXduino
+// #ifndef beginState
+// #error beginState not yet defined
+// #endif
 
-const int offsets[4][8][8] = 
-{ 
-    {//dir 1   2   3   4   5   6   7   8    
-        {  0,  1,  1,  1, -1, -1, -1,  1 } ,        // curve
-        {  1,  1,  0, -1,  0, -1,  0, -1 } , 
-        { -1,  0,  1,  1,  1,  0, -1, -1 } , 
-        { -1, -1, -1,  0,  1,  1,  1,  0 } , 
-        {  0,  0,  0,  0,  0,  0,  0,  0 } ,        // NA 
-        {  0,  0,  0,  0,  0,  0,  0,  0 }          // NA
-    } ,
-    {
-        {  1,  1,  0, -1, -1, -1,  0,  1 } ,        // line (and most other objects)
-        {  0,  1,  1,  1,  0, -1, -1, -1 } ,
-        { -1, -1,  0,  1,  1,  1,  0, -1 } ,
-        {  0, -1, -1, -1,  0,  1,  1,  1 } ,
-        {  0,  0,  0,  0,  0,  0,  0,  0 } ,        // NA
-        {  0,  0,  0,  0,  0,  0,  0,  0 }          // NA
-    } ,
-    {
-        {  1,  1,  0, -1, -1, -1,  0,  1 } ,        // switch left
-        {  0,  1,  1,  1,  0, -1, -1, -1 } ,
-        { -1, -1,  0,  1,  1,  1,  0, -1 } ,
-        {  0, -1, -1, -1,  0,  1,  1,  1 } ,
-        { -1, -1, -1,  0,  1,  1,  1,  0 } ,
-        {  1,  0, -1, -1, -1,  0,  1,  1 }
-    } ,
-    {
-        {  1,  1,  0, -1, -1, -1,  0,  1 } ,        // switch right
-        {  0,  1,  1,  1,  0, -1, -1, -1 } ,
-        { -1, -1,  0,  1,  1,  1,  0, -1 } ,
-        {  0, -1, -1, -1,  0,  1,  1,  1 } ,
-        { -1,  0,  1,  1,  1,  0, -1, -1 } ,
-        {  1, -1, -1,  0,  1, -1,  1,  0 } 
-    }
-}
+// // VARIABLES
+// static unsigned char state = beginState, type, nodesLeft ;
+// static bool enabled = true, runOnce = true, exitFlag = false;
 
-#define SD
 
-// // FUNCTIONS
-// extern void NxDuinoInit(void)
-// {
-//     state = beginState ;
+// uint8_t *startX, *startY, *stopX, *stopY, *startPin, *stopPin ;
+
+// enum types {
+//     node,
+//     other,
+//     nothing,
+//     endButton
 // }
 
+// const int offsets[4][8][8] = 
+// { 
+//     {//dir 1   2   3   4   5   6   7   8    
+//         {  0,  1,  1,  1, -1, -1, -1,  1 } ,        // curve
+//         {  1,  1,  0, -1,  0, -1,  0, -1 } , 
+//         { -1,  0,  1,  1,  1,  0, -1, -1 } , 
+//         { -1, -1, -1,  0,  1,  1,  1,  0 } , 
+//         {  0,  0,  0,  0,  0,  0,  0,  0 } ,        // NA 
+//         {  0,  0,  0,  0,  0,  0,  0,  0 } ,        // NA
+//         {  0,  0,  0,  0,  0,  0,  0,  0 } ,        // NA 
+//         {  0,  0,  0,  0,  0,  0,  0,  0 }          // NA
+//     } ,
+//     {
+//         {  1,  1,  0, -1, -1, -1,  0,  1 } ,        // line (and most other objects)
+//         {  0,  1,  1,  1,  0, -1, -1, -1 } ,
+//         { -1, -1,  0,  1,  1,  1,  0, -1 } ,
+//         {  0, -1, -1, -1,  0,  1,  1,  1 } ,
+//         {  0,  0,  0,  0,  0,  0,  0,  0 } ,        // NA
+//         {  0,  0,  0,  0,  0,  0,  0,  0 } ,        // NA
+//         {  0,  0,  0,  0,  0,  0,  0,  0 } ,        // NA 
+//         {  0,  0,  0,  0,  0,  0,  0,  0 }          // NA
+//     } ,
+//     {
+//         {  1,  1,  0, -1, -1, -1,  0,  1 } ,        // switch left
+//         {  0,  1,  1,  1,  0, -1, -1, -1 } ,
+//         { -1, -1,  0,  1,  1,  1,  0, -1 } ,
+//         {  0, -1, -1, -1,  0,  1,  1,  1 } ,
+//         { -1, -1, -1,  0,  1,  1,  1,  0 } ,
+//         {  1,  0, -1, -1, -1,  0,  1,  1 } ,
+//         {  0,  0,  0,  0,  0,  0,  0,  0 } ,        // might need filling in 
+//         {  0,  0,  0,  0,  0,  0,  0,  0 }          // might need filling in 
+//     } ,
+//     {
+//         {  1,  1,  0, -1, -1, -1,  0,  1 } ,        // switch right
+//         {  0,  1,  1,  1,  0, -1, -1, -1 } ,
+//         { -1, -1,  0,  1,  1,  1,  0, -1 } ,
+//         {  0, -1, -1, -1,  0,  1,  1,  1 } ,
+//         { -1,  0,  1,  1,  1,  0, -1, -1 } ,
+//         {  1, -1, -1,  0,  1, -1,  1,  0 } ,
+//         {  0,  0,  0,  0,  0,  0,  0,  0 } ,        // might need filling in 
+//         {  0,  0,  0,  0,  0,  0,  0,  0 }          // might need filling in 
+//     }
+// } ;
+
+// #define SD
+
+// // // FUNCTIONS
+// // extern void NxDuinoInit(void)
+// // {
+// //     state = beginState ;
+// // }
 
 
-// // This functions reads in all listed buttons and returns true when both a start button
+
+// // // This functions reads in all listed buttons and returns true when both a start button
 // uint8_t readButtonStates(uint8_t *_first, uint8 *_second)
 // {
 //     static uint8_t first = 0xFF ;
@@ -89,50 +105,50 @@ const int offsets[4][8][8] =
 //             if( first == 0xFF )                     // if first spoke is not yet pressed
 //             {
 //                 first = i ;                         // flag that first spoke is found
-//                 debug(F("first button pressed"));
+//                 Debug(F("first button pressed"));
 //             }
 //             else                                    // if first spoke is already recorded, record second button and signal true ;
 //             {
 //                 *_first = first ;                   // pass numbers to calling routine
 //                 *_second = i ;
-//                 debug(F("second button pressed, READY"));
+//                 Debug(F("second button pressed, READY"));
                 
 //                 first = 0xFF ;                      // reset first button for next time.
 //                 return 1 ;                          // flag ready
 //             }
 //         } else if ( i == *first ) {                 // if the first button is no longer pressed, reset it
 //             first = 0xFF ;
-//             debug(F("first button released"));
+//             Debug(F("first button released"));
 //         }
 //     }
     
 //     return 0 ;
 // }
 
-// Object loadNextObject()
-// { 
-//     Object localObj ;
-//     uint8_t* pointer = (uint8_t*) &localObj;
-//     char[] text = "" ;
+// // Object loadNextObject()
+// // { 
+// //     Object localObj ;
+// //     uint8_t* pointer = (uint8_t*) &localObj;
+// //     char[] text = "" ;
     
-//     while( file.available() )
-//     {
-//         uint8_t b = file.read()
+// //     while( file.available() )
+// //     {
+// //         uint8_t b = file.read()
         
-//         if( b ==  ',' || b == '\n') {
-//             *pointer = text.toInt() ;           // parse string to integer and stuff it in localObj
-//             text = "" ;                         // empty the string
+// //         if( b ==  ',' || b == '\n') {
+// //             *pointer = text.toInt() ;           // parse string to integer and stuff it in localObj
+// //             text = "" ;                         // empty the string
             
-//             pointer ++ ;                        // and point to next element in localObj
+// //             pointer ++ ;                        // and point to next element in localObj
             
-//             if( b == '\n' ) return localObj ;   // if newline character, return object
-//         }
-//         else
-//         {
-//             text += b ;                         // if neithe ',' or '\n' than apped character to string
-//         }
-//     }
-// }
+// //             if( b == '\n' ) return localObj ;   // if newline character, return object
+// //         }
+// //         else
+// //         {
+// //             text += b ;                         // if neithe ',' or '\n' than apped character to string
+// //         }
+// //     }
+// // }
 
 // void pushNode ( uint8_t *Xpos, uint8_t *Ypos )
 // {
@@ -237,7 +253,7 @@ const int offsets[4][8][8] =
 //     {        
 //         for( int i = 0 ; i < nObjects ; i ++ )
 //         {
-//             adjacent = loadNextObject();
+//             //adjacent = loadNextObject();
             
 //             if( searchX == adjacent.X && searchY == adjacent.Y )       // if adjacent object is within our search coordinates.
 //             {                                                          // than we need to check if the adjacent object is connected to us as well
@@ -265,8 +281,8 @@ const int offsets[4][8][8] =
 //             }
 //         }
         
-//         debug(F("Found type :")) ;
-//         #define printDebug(x) case x: debug(F(#x)) ; break ; // not sure if F macro inside another macro works?
+//         Debug(F("Found type :")) ;
+//         #define printDebug(x) case x: Debug(F(#x)) ; break ; // not sure if F macro inside another macro works?
 //         switch(type)
 //         {
 //             printDebug( wall ) ;
@@ -359,26 +375,26 @@ const int offsets[4][8][8] =
 //     }
 // }
 
-// stateFunction(storeLed) {
-//     entryState
-//     {
+// // stateFunction(storeLed) {
+// //     entryState
+// //     {
         
-//     }
-//     onState
-//     {
-//         push( led, inputPin) ;
+// //     }
+// //     onState
+// //     {
+// //         push( led, inputPin) ;
 
-//         exitFlag = true;
-//     }
-//     exitState
-//     {
+// //         exitFlag = true;
+// //     }
+// //     exitState
+// //     {
 
-//         return true;
-//     }
-// }
+// //         return true;
+// //     }
+// // }
 
 // // STATE MACHINE
-// extern bool NxDuino(void) {
+// extern bool pathFinder(void) {
 //     STATE_MACHINE_BEGIN
     
     
@@ -394,8 +410,8 @@ const int offsets[4][8][8] =
 //         if( type == nothing ) {
 //             if( nodesLeft )     nextState(loadNode, 0);
 //             else                nextState(fail, 0); }
-//         if( type == endButton)  nextState(succes, 0);
-//         if( type == led )       nextState(storeLed, 0); }
+//         if( type == endButton)  nextState(succes, 0); }
+//       //  if( type == led )       nextState(storeLed, 0); }
 
 //     State(storeNode) {
 //         nextState(findAdjacentObject, 0); }
@@ -409,8 +425,8 @@ const int offsets[4][8][8] =
 //     State(succes) {
 //         nextState(getButtons, 0); }
 
-//     State(storeLed) {
-//         nextState(findAdjacentObject, 0); }
+//     // State(storeLed) {
+//     //     nextState(findAdjacentObject, 0); }
 
 //     STATE_MACHINE_END
 // }

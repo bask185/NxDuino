@@ -12,6 +12,31 @@
 //    output = 0x00,
 //    pullUp = 0xff};
 
+/* calculates which pin, which port and which mcp23017 slave is to be set or cleared */
+void mcpWrite(unsigned char pin, unsigned char state) 
+{
+    unsigned char address = 0x20, port, IO;
+    address += (pin / 16);                // select address
+
+    if(pin % 16 < 8)    port = portA;    // select port
+    else                port = portB;
+
+    pin %= 8 ;
+
+    Wire.beginTransmission(address);
+    Wire.write(port);
+    Wire.endTransmission();
+    Wire.requestFrom(address, 1);
+    IO = Wire.read();                    // fetch current IO status
+
+    Wire.beginTransmission(address);
+    Wire.write(port);
+    if(state)    IO |=  (1 << pin);        // OR 'IO' with pin
+    else         IO &= ~(1 << pin);        // or AND the inverse of pin
+    Wire.write(IO);                        // transmit the updated IO
+    Wire.endTransmission();
+}
+
 Mcp23017::Mcp23017() {;}
 
 uint8_t Mcp23017::init(byte _address, unsigned int ioDir) {

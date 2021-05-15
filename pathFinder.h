@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 enum NxDuinoStates {
     NxDuinoIDLE,
     getButtons,
@@ -9,7 +11,7 @@ enum NxDuinoStates {
     storeLed,
     initNXduino };
 
-extern bool NxDuino(void); 
+extern bool pathFinder(void); 
 extern void NxDuinoInit();
 extern void NxDuinoSetState(unsigned char);
 extern unsigned char NxDuinoGetState(void);

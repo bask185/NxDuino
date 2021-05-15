@@ -6,6 +6,8 @@
 #define getInput(x) getRegister(x)
 #define mcpBaseAddress 0x20
 
+extern void mcpWrite(unsigned char, unsigned char ) ;
+
 enum mcp23017 {
     IODIRA = 0x00,
     IODIRB = 0x01,

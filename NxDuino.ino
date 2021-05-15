@@ -1,11 +1,24 @@
-//#include "NxDuino.h"
-#include "roundRobinTasks.h"
+#include "config.h"
+
+#include "src/modules/eeprom.h"
+#include "src/modules/mcp23017.h"
+#include "src/modules/SDparser.h"
+
+#ifdef XPRESSNET
+#include "src/modules/XpressNet.h"
+XpressNetClass XpressNet;
+#endif
+
+#include <Wire.h>
 
 
-void loadEEPROM(uint16_t *iodir){ // returns ammount of requied MCP23017 slaves depending on taught in IO
-    uint16_t eeAddress;
+void loadEEPROM() 
+{
+    uint16_t eeAddress = 0x3FFF ;
 
-    uint16_t ioDir[8] = {0,0,0,0,0,0,0,0};
+    uint16_t array[8] = {0,0,0,0,0,0,0,0};
+    uint16_t *ioDir ;
+    ioDir = &array[0] ;
 
     for( uint8_t element = 0; element < 128 ; element++ ) 
     {
@@ -13,70 +26,103 @@ void loadEEPROM(uint16_t *iodir){ // returns ammount of requied MCP23017 slaves 
         uint8_t inputPin=  element % 16;
         
         railItems _IO = getIO( element ) ;
+        // #ifndef XPRESSNET
+        // sprintf(sbuf, "type %3d, ID %3d, inputPin %3d, outputPin %3d", _IO.type, _IO.ID, _IO.inputPin, _IO.outputPin ) ;
+        // Serial.println(sbuf) ;
+        // #endif
 
         // N.B all IO is an OUTPUT by default. Therefor we only need to set ioDir bits for INPUTS
         if( _IO.type >= start_stop_sw && _IO.type  <= occupancy_2_I2C )     // if device is I2C input,
         {
-            iodir += xMcp;                                     // match iodir's address to corresponding mcp23017
-            *iodir |= 0x01 << pin;                             // configure inputPinas input pullup
-            iodir -= xMcp;                                     // set address back
+            ioDir += xMcp;                                     // match iodir's address to corresponding mcp23017
+            (*ioDir) |= ( 0x01 << inputPin)  ;                  // configure inputPinas input pullup
+            ioDir -= xMcp;                                     // set address back
         }
     }
 
-    for( uint8_t j = 0 ; j < nMcp ; j++ ) {                        // check if all 4 slaves are present and set their IO dir registers
-        if( mcp[j].init(mcpBaseAddress + j , ioDir[j]) ) {  // if function returns true, the slave did NOT respond
+    for( uint8_t j = 0 ; j < nMcp ; j++ ) {                        // check if all slaves are present and set their IO dir registers
+        if( mcp[j].init(mcpBaseAddress + j , 255/*ioDir[j]*/ ))  {  		// if function returns true, the slave did NOT respond
             nMcp = j ;
             break ; 
         }
     }
-   // debug( nMcp );
-   // debug(F(" mcp23017 devices found\r\n" )) ;
-}
+    Debug( nMcp );
+    Debug(F(" mcp23017 devices found\r\n" )) ;
 
+
+    // #ifndef XPRESSNET
+
+    // for ( int i = 0 ; i < 128 ; i ++ )
+    // {
+    //     Wire.beginTransmission( 0x50) ;
+    //     Wire.write( HIGHBYTE( i * 4 ) ) ;
+    //     Wire.write(  LOWBYTE( i * 4 ) ) ;
+    //     Wire.endTransmission() ;
+    //     Wire.requestFrom( 0x50, 8 ) ; 
+
+    //     for ( int j = 0 ; j < 4 ; j ++ )
+    //     {
+    //         byte val = Wire.read();
+    //         sprintf(sbuf,"%4d", val );
+    //         Serial.print( sbuf ) ;
+    //     }
+    //     Serial.print("   rule #") ;
+    //     Serial.print( i ) ;
+    //     Serial.println("   ") ;  
+    //     delay(10);
+    // }
+    // #endif
+}
 
 void readInputs()
 {
     uint8_t state;
-    static uint16_t inputPrev[8] = {0,0,0,0,0,0,0,0} ;
+    static uint16_t inputPrev[8] = {255,255,255,255,255,255,255,255} ;
 
-    for( uint8_t slave = 0 ; slave < nMcp ; slave ++ )                                         // for all MCP23017 devices
+    for( uint8_t slave = 0 ; slave < nMcp ; slave ++ )                                              // for all MCP23017 devices
     {
-        uint16_t input = mcp[slave].getInput(portB) | (mcp[slave].getInput(portA) << 8);    // read both I/O ports
+        uint16_t input = mcp[slave].getInput(portB) | (mcp[slave].getInput(portA) << 8);            // read both I/O ports
 
-        for( uint8_t inputPin= 0 ; inputPin< 16 ; inputPin++ )                                           // for all 16 I/O pins
+        for( uint8_t inputPin= 0 ; inputPin < 16 ; inputPin++ )                                     // for all 16 I/O pins
         {   
-            uint8_t newInp =             input & ( 1 << inputPin) ;                             // get state of pin
-            uint8_t oldInp =  inputPrev[slave] & ( 1 << inputPin) ;                             // get previous state of same pin
-            if( newInp != oldInp )                                                          // and check if they differ
+            uint8_t newInput =             input & ( 1 << inputPin) ;                               // get state of pin
+            uint8_t oldInput =  inputPrev[slave] & ( 1 << inputPin) ;                               // get previous state of same pin
+            if( newInput != oldInput )                                                              // and check if they differ
             {    
                 uint8_t state ;
                 inputPrev[slave] = input ;
                
-                uint8_t _IO = inputPin+ slave * 16 ;                                                     // calculate which IO has changed
-                if( input  & ( 1 << inputPin) ) state = 0 ;                                     // store the state of the changed I/O (not pressed = HIGH)
-                else                        state = 1 ;
+                uint8_t _IO = inputPin + slave * 16 + 1 ;                                           // calculate which IO has changed (0-127)
+                if( input  & ( 1 << inputPin) ) state = 0 ;                                         // store the state of the changed I/O (not pressed = HIGH)
+                else                            state = 1 ;
 
-                for( uint8_t i = 0 ; i < nRailItem ; i ++ )                                 // for loop to search which object is linked to this IO pin
-                {
-                    // debug("\r\ninput ");
-                    // debug( _IO ) ; 
-                    // debug(F(" changed to "));
-                    // debug( state ) ;
+                Debug("\r\ninput ");
+                Debug( _IO ) ; 
+                Debug(F(" changed to "));
+                Debug( state ) ;
 
-                    uint8_t _type = 1; //IO[i].type ;   FIXME
-                    switch( _type )
-                    {
-                    case occupancy_1_I2C :                                                  // if any of these items -> update the state
-                    case occupancy_2_I2C :
-                    case start_stop_sw :
-                        //IO[i].type = state ;                                                // true or false immediate updated is needed
-                        break ;
-                    }
-                }    
-            } 
+                railItems obj = getIO( _IO ) ;
+                Debug(F("matching output = ")) ;
+                Debug(obj.outputPin - 1) ;
+                //switch( _type )   // DO SOMETHING WITH ME
+
+                mcpWrite( obj.outputPin - 2, state ) ;
+                return ;
+            }   
         } 
     } 
 }
+
+
+// tatic unsigned int inputPrev[8] = {0,0,0,0,0,0,0,0}, input = 0;
+// 		input = mcp[slave].getInput(portB) | (mcp[slave].getInput(portA) << 8);	// read both I/O ports
+// 		for(pin=0;pin<16;pin++) {												// for all 16 I/O pins
+// 			if((input & (1 << pin)) != (inputPrev[slave] & (1 << pin))) {		// if an input (detector or memory) has changed...
+// 				inputPrev[slave] = input;
+// 				if(input & (1<<pin))	state = 0;					  			// store the state of the changed I/O (not pressed = HIGH)
+// 				else					state = 1;
+// 				IO = pin + slave * 16;											// calculate which IO has changed
+// 				for(element=0; element<elementAmmount;
 
 // void updateOutputs()
 // {
@@ -97,7 +143,9 @@ void readInputs()
 //             else if ( _type == point_DCC || _type == relay_DCC )
 //             {
 //                 uint8_t _ID = IO[i].ID ;
+//                 #ifdef XPRESSNET
 //                 XpressNet.setTrntPos( HIGHBYTE(_ID), LOWBYTE(_ID), state) ;
+//                 #endif
 //             }
 //         }
 //     }
@@ -112,28 +160,40 @@ const int XNetSRPin = 2 ;
 
 void setup()
 {
-	Wire.begin() ;		// sets up I2C bus
-	XpressNet.start( XNetAddress, XNetSRPin); // sets up XpressNet Bus
+    Wire.begin() ;		// sets up I2C bus
+    #ifdef XPRESSNET
+    XpressNet.start( XNetAddress, XNetSRPin); // sets up XpressNet Bus
+    #else
+    Serial.begin(115200);
+    #endif
 
     SDparser() ;		// checks if SD card with correct file is present, and if so,  whipes and fills the I2C EEPROM
-	loadEEPROM() ;		// runs through EEPROM to initialize MCP23017 devices
-	initMcp() ;
+    loadEEPROM() ;		// runs through EEPROM to initialize MCP23017 devices
 
-	//pathFinderInit() ;	// initialize pathFinder
-	//Serial.begin(115200) ;
+
+
+//     for( int i = 1 ; i < 33 ; i ++ )
+//     {
+//         mcpWrite( i-1, 1 ) ;
+//         Debug(i) ;
+//         delay(1500) ;
+//         mcpWrite( i-1, 0 ) ;
+//         delay(500) ;
+//     }   
 }
 
 void loop()
 {
-	XpressNet.receive();
+    #ifdef XPRESSNET
+    XpressNet.receive();
+    #endif
 
     REPEAT_MS(20);
 
     readInputs() ;
-    //updateOutputs() ;
 
     END_REPEAT
 
-	pathFinder()
+	//pathFinder()
 
 }

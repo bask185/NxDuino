@@ -2,7 +2,7 @@
 #include "../../variables.h"
 
 extern railItems getIO( uint8_t inputPin) ;
-extern void storeIO( railItems _IO ) ;
+extern void storeIO( railItems* ) ;
 
-extern trackSegments getSegment( uint8_t X, uint8_t Y ) ;
-extern void storeSegement( trackSegments segment ) ;
+extern void getSegment( trackSegments *segment, uint8_t _X, uint8_t _Y ) ;
+extern void storeSegment( trackSegments *segment ) ;
