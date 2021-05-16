@@ -55,6 +55,7 @@ typedef struct
 {
     uint8_t X ;
     uint8_t Y  ; 
+    uint8_t ID ;
     uint8_t type ; // line (line, detector, button, whatever is straight), left point, right point, curve
     uint8_t dir ; 
 } trackSegments ;

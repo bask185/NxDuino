@@ -7,11 +7,16 @@
 /*
 * TRACKSEGMENTS
 * EEPROM RANGE = 0x3FFF <> 0x7FFF
+
+adress =   x * 5 + y
+
 */
 #define segmentOffset 0x3FFF
+#define segSize 5
+#define ioSize 4
 void storeSegment( trackSegments *segment ) 
 {    //            address = x * y * 4 + offset
-    uint16_t eeAddress = (uint16_t) segment -> X * segment -> Y * 4 + segmentOffset ;     //extra cast because C and C++ is shite in this
+    uint16_t eeAddress = (uint16_t)(segment->X) * 160 + (segment->Y * segSize) + segmentOffset ;     //extra cast because C and C++ is shite in this
 
     Wire.beginTransmission( hwAddress ) ;
     Wire.write( HIGHBYTE( eeAddress ) ) ;                
@@ -19,15 +24,20 @@ void storeSegment( trackSegments *segment )
     
     Wire.write( segment -> X ) ;
     Wire.write( segment -> Y ) ;
+    Wire.write( segment -> ID ) ;
     Wire.write( segment -> type ) ;
     Wire.write( segment -> dir ) ;
 
     Wire.endTransmission() ;
 
-    #ifndef XPRESSNET
-    sprintf( sbuf, "adr: %4d, X:%2d , Y:%2d, type:%2d, dir:%2d", eeAddress, segment->X, segment->Y, segment->type, segment->dir ) ;
-    Debug( sbuf ) ;
-    #endif
+    // sprintf( sbuf,"SAVE adr:%5d, X:%3d, Y:%3d, ID:%3d, type:%3d, dir:%3d",
+    //     eeAddress ,
+    //     segment -> X,
+    //     segment -> Y,
+    //     segment -> ID,
+    //     segment -> type,
+    //     segment -> dir) ;
+    // Debug(sbuf);
 }
 
 void getSegment( trackSegments *segment, uint8_t _X, uint8_t _Y )
@@ -37,18 +47,29 @@ void getSegment( trackSegments *segment, uint8_t _X, uint8_t _Y )
     _X -- ;    
     _Y -- ;
 
-    uint16_t eeAddress = (uint16_t)_X * _Y * 4 + segmentOffset ;     //extra cast because C and C++ is shite in this
+    uint16_t eeAddress = ((uint16_t)_X * 160)  + (_Y * segSize) + segmentOffset ;     //extra cast because C and C++ is shite in this
 
     Wire.beginTransmission( hwAddress ) ;
     Wire.write( HIGHBYTE( eeAddress ) ) ;                
     Wire.write(  LOWBYTE( eeAddress ) ) ;
     Wire.endTransmission() ;
-    Wire.requestFrom( hwAddress, 4 ) ;
+    Wire.requestFrom( hwAddress, segSize ) ;
 
     segment->X     = Wire.read() ;
     segment->Y     = Wire.read() ;
+    segment->ID    = Wire.read() ;
     segment->type  = Wire.read() ;
     segment->dir   = Wire.read() ;
+
+    //sprintf( sbuf,"LOAD adr:%5d, X:%3d, Y:%3d", eeAddress, _X, _Y);
+    // sprintf( sbuf,"LOAD adr:%5d, X:%3d, Y:%3d, ID:%3d, type:%3d, dir:%3d",
+    //     eeAddress ,
+    //     segment -> X,
+    //     segment -> Y,
+    //     segment -> ID,
+    //     segment -> type,
+    //     segment -> dir ) ;
+    // Debug(sbuf);
 }
 
 
@@ -59,9 +80,9 @@ void getSegment( trackSegments *segment, uint8_t _X, uint8_t _Y )
 void storeIO( railItems* obj ) 
 {
     uint16_t eeAddress = 0 ;
-    if(      obj->inputPin  > 0 ) eeAddress =  obj->inputPin  * 4 ;    
-    else if( obj->outputPin > 0 ) eeAddress =  obj->outputPin * 4 ;   
-    Debug(eeAddress) ;
+    if(      obj->inputPin  > 0 ) eeAddress =  obj->inputPin  * ioSize ;    
+    else if( obj->outputPin > 0 ) eeAddress =  obj->outputPin * ioSize ;   
+
     Wire.beginTransmission( hwAddress ) ;
     Wire.write( HIGHBYTE( eeAddress ) ) ;                
     Wire.write(  LOWBYTE( eeAddress ) ) ;
@@ -83,13 +104,13 @@ railItems getIO( uint8_t inputPin)
     inputPin= constrain( inputPin, 1, 128 ) ;                        // safety measure
     inputPin -- ;                                               // for 0 index misery
 
-    uint16_t eeAddress = inputPin* 4 ;                          // should be always within 0-127
+    uint16_t eeAddress = inputPin* ioSize ;                          // should be always within 0-127
 
     Wire.beginTransmission( hwAddress ) ;
     Wire.write( HIGHBYTE( eeAddress ) ) ;
     Wire.write(  LOWBYTE( eeAddress ) ) ;
     Wire.endTransmission() ;
-    Wire.requestFrom( hwAddress, 4 ) ;
+    Wire.requestFrom( hwAddress, ioSize ) ;
 
 
     for( int i = 0 ; i < sizeof( IO ) ; i ++ )                  // use for loop to initialize all bytes of local object before returning
@@ -99,4 +120,42 @@ railItems getIO( uint8_t inputPin)
     } 
 
     return _IO ;                                                // return the IO object
+}
+
+uint8_t searchID( trackSegments *segment, uint8_t searchID ) 
+{
+    for( uint16_t eeAddress = 0x3FFF ; eeAddress < 0x7FFF ; eeAddress += 5 )
+    {
+        Wire.beginTransmission( hwAddress ) ;
+        Wire.write( HIGHBYTE( eeAddress ) ) ;                
+        Wire.write(  LOWBYTE( eeAddress ) ) ;
+        Wire.endTransmission() ;
+        Wire.requestFrom( hwAddress, segSize ) ;
+
+        segment->X     = Wire.read() ;
+        segment->Y     = Wire.read() ;
+        segment->ID    = Wire.read() ;
+        segment->type  = Wire.read() ;
+        segment->dir   = Wire.read() ;
+
+        if(( segment->ID   == searchID )
+        &&   segment->type == start_stop_sw )
+        {
+            return 1 ;  // report succes
+        }
+    }
+    return 0 ; // report fail
+}
+
+void whipeEEPROM()
+{
+    Wire.beginTransmission( hwAddress ) ;
+    Wire.write( 0 ) ; // adr 0
+    Wire.write( 0 ) ; // adr 0
+    for( uint16_t i = 0 ; i < 0x8000 ; i++ )
+    {
+        Wire.write( 255 );
+    }
+    Wire.endTransmission() ;
+    Debug("EEPROM WIPED");
 }

@@ -14,8 +14,6 @@ XpressNetClass XpressNet;
 
 void loadEEPROM() 
 {
-    uint16_t eeAddress = 0x3FFF ;
-
     uint16_t array[8] = {0,0,0,0,0,0,0,0};
     uint16_t *ioDir ;
     ioDir = &array[0] ;
@@ -41,7 +39,7 @@ void loadEEPROM()
     }
 
     for( uint8_t j = 0 ; j < nMcp ; j++ ) {                        // check if all slaves are present and set their IO dir registers
-        if( mcp[j].init(mcpBaseAddress + j , 255/*ioDir[j]*/ ))  {  		// if function returns true, the slave did NOT respond
+        if( mcp[j].init(mcpBaseAddress + j , ioDir[j] ))  {  		// if function returns true, the slave did NOT respond
             nMcp = j ;
             break ; 
         }
@@ -49,29 +47,38 @@ void loadEEPROM()
     Debug( nMcp );
     Debug(F(" mcp23017 devices found\r\n" )) ;
 
+    #ifndef XPRESSNET
 
-    // #ifndef XPRESSNET
 
-    // for ( int i = 0 ; i < 128 ; i ++ )
+
+    // for( uint16_t eeAdress = 0x3FFF ; eeAdress < 0x7FFF ; eeAdress += 5 )
     // {
-    //     Wire.beginTransmission( 0x50) ;
-    //     Wire.write( HIGHBYTE( i * 4 ) ) ;
-    //     Wire.write(  LOWBYTE( i * 4 ) ) ;
-    //     Wire.endTransmission() ;
-    //     Wire.requestFrom( 0x50, 8 ) ; 
+    //     Wire.beginTransmission(0x50);
+    //     Wire.write( HIGHBYTE(eeAdress) ) ;
+    //     Wire.write(  LOWBYTE(eeAdress) ) ;
+    //     Wire.endTransmission() ; 
 
-    //     for ( int j = 0 ; j < 4 ; j ++ )
+    //     Wire.requestFrom( 0x50, 5 ) ;
+    //     for(int i = 0 ; i < 5 ; i++ )
     //     {
-    //         byte val = Wire.read();
-    //         sprintf(sbuf,"%4d", val );
-    //         Serial.print( sbuf ) ;
-    //     }
-    //     Serial.print("   rule #") ;
-    //     Serial.print( i ) ;
-    //     Serial.println("   ") ;  
-    //     delay(10);
+    //         array[i] = Wire.read() ;
+    //     } 
+    //     sprintf( sbuf,"X:%3d, Y:%3d, ID:%3d, type:%3d dir:%3d",
+    //             array[0] ,
+    //             array[1] ,
+    //             array[2] ,
+    //             array[3] ,
+    //             array[4] ) ;
+    //     Debug(sbuf) ;
     // }
-    // #endif
+    for ( int x = 1 ; x <= 64 ; x ++ ) {
+        for( int y = 1 ; y <= 32 ; y ++ ) {
+            trackSegments segment ;
+            getSegment( &segment, x, y ) ;
+        }
+    }
+
+    #endif
 }
 
 void readInputs()
@@ -104,8 +111,21 @@ void readInputs()
                 railItems obj = getIO( _IO ) ;
                 Debug(F("matching output = ")) ;
                 Debug(obj.outputPin - 1) ;
-                //switch( _type )   // DO SOMETHING WITH ME
 
+                if(obj.type == start_stop_sw )
+                {
+                    trackSegments segment ;
+                    Debug(F("search ID is")) ;
+                    Debug(obj.ID ) ;
+                    uint8_t succes = searchID( &segment, obj.ID ) ;
+                    if( succes ) {
+                        Debug(F("Start/Stop switch pressed")) ;
+                        Debug( segment.ID );
+                        Debug( segment.X );
+                        Debug( segment.Y );
+                    }
+                    else Debug(F("no switch found in EEPROM")) ;
+                }
                 mcpWrite( obj.outputPin - 2, state ) ;
                 return ;
             }   

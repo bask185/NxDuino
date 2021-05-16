@@ -55,7 +55,7 @@ void SDparser( )
     uint8_t mode = 0 ;
     uint8_t mode1 = 0 ;
     uint8_t type = 0 ;
-    uint8_t array[5] = {1,0,0,0,0}; ;  // we can have 8 bytes per line
+    uint8_t array[8] = {1,0,0,0,0,0,0,0}; ;  // we can have 8 bytes per line
     uint8_t index = 0 ;
     String label = "" ;
     uint8_t state = checkModule ;
@@ -81,7 +81,8 @@ void SDparser( )
             if( dataFile ) 
             {
                 Debug("SD_DATA.TXT") ;
-                Debug(" opened ;") ;
+                Debug(" opened, whiping EEPROM") ;
+                whipeEEPROM() ;
                 state = readByte ;
             }
             else {
@@ -116,34 +117,31 @@ void SDparser( )
             break ;
 
         case storeElement : // 4
-            #ifdef DEBUG
-            // sprintf(sbuf, "Storing number '%3d', on index '%1d'", number, index ) ;
-            // Debug(sbuf);
-            #endif
             array[ index++ ] = number ;     // store number in array and increment index
             number = 0 ;
             state = readByte ;
             break ;
 
         case storeObject :  // 5
-            #ifdef DEBUG
+            // #ifdef DEBUG
             // sprintf(sbuf, "Storing number '%3d', on index '%1d'", number, index ) ;
             // Debug(sbuf);
-            #endif
+            // #endif
             array[ index++ ] = number ;     // store number in array and increment index
             number = 0 ;
 
-            if( label == "[TRACK_SEGMENTS]" )   { mode1 = TRACK_SEGMENTS ;   /*Debug(F("STORING TRACK_SEGMENTS")) ;*/ }
-            if( label == "[IO]" )               { mode1 = IO ;               /*Debug(F("STORING IO")) ; */}
+            if( label == "[TRACK_SEGMENTS]" )   { mode1 = TRACK_SEGMENTS ;   Debug(F("STORING TRACK_SEGMENTS")) ; }
+            if( label == "[IO]" )               { mode1 = IO ;               Debug(F("STORING IO")) ; }
 
             if( mode1 == TRACK_SEGMENTS )
             {
-                if( array[2] == 0 ) goto cleanUp ;
                 trackSegments segment ;
                 segment.X   = array[0] ;
                 segment.Y   = array[1] ;
-                segment.type= array[2] ;
-                segment.dir = array[3] ;
+                segment.ID  = array[2] ;
+                segment.type= array[3] ;
+                segment.dir = array[4] ;
+
                 storeSegment( &segment ) ;
             }
             if( mode1 == IO) 
