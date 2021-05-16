@@ -14,6 +14,8 @@ Mcp23017 mcp[]
 
 uint8_t nMcp = 8 ;
 
+uint16_t outputs[ 8 ] ;
+
 railItems IO ;
 trackSegments track ;
 

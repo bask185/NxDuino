@@ -32,6 +32,7 @@ void loadEEPROM()
         // N.B all IO is an OUTPUT by default. Therefor we only need to set ioDir bits for INPUTS
         if( _IO.type >= start_stop_sw && _IO.type  <= occupancy_2_I2C )     // if device is I2C input,
         {
+            Debug("setting input");
             ioDir += xMcp;                                     // match iodir's address to corresponding mcp23017
             (*ioDir) |= ( 0x01 << inputPin)  ;                  // configure inputPinas input pullup
             ioDir -= xMcp;                                     // set address back
@@ -39,7 +40,8 @@ void loadEEPROM()
     }
 
     for( uint8_t j = 0 ; j < nMcp ; j++ ) {                        // check if all slaves are present and set their IO dir registers
-        if( mcp[j].init(mcpBaseAddress + j , ioDir[j] ))  {  		// if function returns true, the slave did NOT respond
+        Serial.println( ioDir[j], BIN );
+        if( mcp[j].init(mcpBaseAddress + j , /*ioDir[j]*/255 ))  {  		// if function returns true, the slave did NOT respond
             nMcp = j ;
             break ; 
         }
@@ -71,12 +73,12 @@ void loadEEPROM()
     //             array[4] ) ;
     //     Debug(sbuf) ;
     // }
-    for ( int x = 1 ; x <= 64 ; x ++ ) {
-        for( int y = 1 ; y <= 32 ; y ++ ) {
-            trackSegments segment ;
-            getSegment( &segment, x, y ) ;
-        }
-    }
+    // for ( int x = 1 ; x <= 64 ; x ++ ) {
+    //     for( int y = 1 ; y <= 32 ; y ++ ) {
+    //         trackSegments segment ;
+    //         getSegment( &segment, x, y ) ;
+    //     }
+    // }
 
     #endif
 }
@@ -88,7 +90,7 @@ void readInputs()
 
     for( uint8_t slave = 0 ; slave < nMcp ; slave ++ )                                              // for all MCP23017 devices
     {
-        uint16_t input = mcp[slave].getInput(portB) | (mcp[slave].getInput(portA) << 8);            // read both I/O ports
+        uint16_t input = ( mcp[slave].getInput(portB) << 8 ) | mcp[slave].getInput(portA);            // read both I/O ports
 
         for( uint8_t inputPin= 0 ; inputPin < 16 ; inputPin++ )                                     // for all 16 I/O pins
         {   
@@ -115,16 +117,16 @@ void readInputs()
                 if(obj.type == start_stop_sw )
                 {
                     trackSegments segment ;
-                    Debug(F("search ID is")) ;
-                    Debug(obj.ID ) ;
-                    uint8_t succes = searchID( &segment, obj.ID ) ;
-                    if( succes ) {
-                        Debug(F("Start/Stop switch pressed")) ;
-                        Debug( segment.ID );
-                        Debug( segment.X );
-                        Debug( segment.Y );
-                    }
-                    else Debug(F("no switch found in EEPROM")) ;
+                    // Debug(F("search ID is")) ;
+                    // Debug(obj.ID ) ;
+                    // uint8_t succes = searchID( &segment, obj.ID ) ;
+                    // if( succes ) {
+                    //     Debug(F("Start/Stop switch pressed")) ;
+                    //     Debug( segment.ID );
+                    //     Debug( segment.X );
+                    //     Debug( segment.Y );
+                    // }
+                    // else Debug(F("no switch found in EEPROM")) ;
                 }
                 mcpWrite( obj.outputPin - 2, state ) ;
                 return ;
