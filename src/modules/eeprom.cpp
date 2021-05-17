@@ -93,6 +93,9 @@ void storeIO( railItems* obj )
     Wire.write( obj->outputPin ) ;
 
     Wire.endTransmission() ;
+
+    sprintf(sbuf, "Addr:%3d ,ID:%3d, type:%3d, inputPin:%3d, outputPin:%3d",eeAddress,obj->ID,obj->type ,obj->inputPin ,obj->outputPin);
+    Debug( sbuf ) ;
 }
 
 railItems getIO( uint8_t inputPin)
@@ -101,8 +104,8 @@ railItems getIO( uint8_t inputPin)
     uint8_t *ptr ;                                              // declare pointer
     ptr = &_IO.ID ;                                             // let it point to first element of object
 
-    inputPin= constrain( inputPin, 1, 128 ) ;                        // safety measure
-    inputPin -- ;                                               // for 0 index misery
+    inputPin= constrain( inputPin, 0, 127 ) ;                        // safety measure
+    //inputPin -- ;                                               // for 0 index misery
 
     uint16_t eeAddress = inputPin* ioSize ;                          // should be always within 0-127
 
@@ -113,9 +116,9 @@ railItems getIO( uint8_t inputPin)
     Wire.requestFrom( hwAddress, ioSize ) ;
 
 
-    for( int i = 0 ; i < sizeof( IO ) ; i ++ )                  // use for loop to initialize all bytes of local object before returning
+    for( int i = 0 ; i < sizeof( _IO ) ; i ++ )                  // use for loop to initialize all bytes of local object before returning
     {
-        *ptr = Wire.read() ;                                    // use pointer to scoop eeprom in struct obj
+        (*ptr) = Wire.read() ;                                    // use pointer to scoop eeprom in struct obj
         ptr++ ;
     } 
 
@@ -144,6 +147,11 @@ uint8_t searchID( trackSegments *segment, uint8_t searchID )
             return 1 ;  // report succes
         }
     }
+    segment->X     = 255 ;
+    segment->Y     = 255 ;
+    segment->ID    = 255 ;
+    segment->type  = 255 ;
+    segment->dir   = 255 ;
     return 0 ; // report fail
 }
 

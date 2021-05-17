@@ -55,7 +55,7 @@ void SDparser( )
     uint8_t mode = 0 ;
     uint8_t mode1 = 0 ;
     uint8_t type = 0 ;
-    uint8_t array[8] = {1,0,0,0,0,0,0,0}; ;  // we can have 8 bytes per line
+    uint8_t array[10] = {1,0,0,0,0,0,0,0,0,0}; ;  // we can have 8 bytes per line
     uint8_t index = 0 ;
     String label = "" ;
     uint8_t state = checkModule ;

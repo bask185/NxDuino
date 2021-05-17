@@ -43,16 +43,16 @@ uint8_t Mcp23017::init(byte _address, unsigned int ioDir) {
     address = _address;
     Wire.beginTransmission(address);
     Wire.write(IODIRA);
-    Wire.write(ioDir>>8);
     Wire.write(ioDir);
+    Wire.write(ioDir>>8);
     uint8_t error = Wire.endTransmission();
 
     if( error ) return 1;                // slave is not present or defective
 
     Wire.beginTransmission(address);
     Wire.write(pullUpRegA);
-    Wire.write(ioDir>>8);                   // pullup setting must be the same for iodir setting
-    Wire.write(ioDir);
+    Wire.write(ioDir);                   // pullup setting must be the same for iodir setting
+    Wire.write(ioDir>>8);
     Wire.endTransmission();
     
     Wire.beginTransmission(address);        // initialize all outputs to 0

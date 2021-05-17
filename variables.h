@@ -48,7 +48,7 @@ typedef struct someName {
     uint8_t outputPin ;
 } railItems ;
 
-extern railItems IO ;
+//extern railItems IO ;
 
 // N.B. rail sections will propably be great in amount, therefor reduced RAM storage is preferable.
 typedef struct  
@@ -60,5 +60,6 @@ typedef struct
     uint8_t dir ; 
 } trackSegments ;
 
-extern trackSegments trackSegment ;
+//extern trackSegments trackSegment ;
+extern trackSegments startSwitch, stopSwitch ;
 

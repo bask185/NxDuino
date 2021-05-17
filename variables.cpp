@@ -16,6 +16,7 @@ uint8_t nMcp = 8 ;
 
 uint16_t outputs[ 8 ] ;
 
-railItems IO ;
-trackSegments track ;
+//railItems IO ;
+//trackSegments track ;
+trackSegments startSwitch, stopSwitch ;
 
